@@ -5,6 +5,8 @@ def ler_arquivo(nome_arquivo_entrada):
         linhas = arquivo.read().splitlines()
         
         indice_linha = 0
+
+        indice_linha += 0
         nome_instancia = linhas[indice_linha].split(" ")[1:]
         
         indice_linha += 1
@@ -37,7 +39,20 @@ def ler_arquivo(nome_arquivo_entrada):
         indice_linha += 1
         indice_linha += 1
 
-        vertices = []
+        vertices = {}
+
+        dados = {
+            "nome_instancia" : nome_instancia,
+            "local" : local,
+            "comentario" : comentario,
+            "tipo" : tipo,
+            "tamanho" : tamanho,
+            "distribuicao" : distribuicao,
+            "escolha_deposito" : escolha_deposito,
+            "tempo_maximo" : tempo_maximo,
+            "janela_tempo" : janela_tempo,
+            "capacidade" : capacidade
+        }
 
         inicio_loop = indice_linha
         fim_loop = tamanho + indice_linha
@@ -59,7 +74,7 @@ def ler_arquivo(nome_arquivo_entrada):
                                 par_delivery)
 
             
-            vertices.append(vertice)
+            vertices[idx] = (vertice)
 
 
         indice_linha += tamanho + 1
@@ -77,4 +92,4 @@ def ler_arquivo(nome_arquivo_entrada):
             for peso in pesos:
                 matriz[i-inicio_loop].append(int(peso))
         
-        return (vertices, matriz)
+        return (dados, vertices, matriz)

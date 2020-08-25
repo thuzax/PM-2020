@@ -1,0 +1,19 @@
+\ Model modelo_pdjt_copy
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+Minimize
+ 
+Subject To
+ espelhado_igual_1_2_0: aresta_1_2_0 - aresta_2_1_0 = 0
+ define_local_ini_pt_1_1_2_0: 999999 aresta_1_2_0 + local_inicio_1_0
+   - local_inicio_2_0 <= 999990
+ define_local_ini_pt_1_2_1_0: 999999 aresta_2_1_0 - local_inicio_1_0
+   + local_inicio_2_0 <= 999991
+ testezao: aresta_1_2_0 = 1
+Bounds
+ local_inicio_1_0 free
+ local_inicio_2_0 free
+Binaries
+ aresta_1_2_0 aresta_2_1_0
+Generals
+ local_inicio_1_0 local_inicio_2_0
+End

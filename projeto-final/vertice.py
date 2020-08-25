@@ -18,8 +18,12 @@ class Vertice:
         self.e_pickup = True if self.demanda > 0 else False
         self.e_delivery = True if self.demanda < 0 else False
         
-        self.e_deposito = not(self.e_pickup and self.e_delivery)
+        self.e_deposito = not(self.e_pickup or self.e_delivery)
 
+        if (self.e_deposito):
+            self.e_pickup = True
+            self.par_pickup = 0
+            self.par_delivery = 0
 
 
     def retorna_par(self):

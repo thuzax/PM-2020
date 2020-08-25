@@ -1,0 +1,19 @@
+NAME: bar-n100-1
+LOCATION: Barcelona
+COMMENT:  Sartori and Buriol (2019)
+TYPE: PDPTW
+SIZE: 3
+DISTRIBUTION: cluster-random (7 / 1.5)
+DEPOT: random
+ROUTE-TIME: 240
+TIME-WINDOW: 120
+CAPACITY: 300
+NODES
+0 0 0 0 0 240 0 0 0
+1 0 1 22 20 100 5 0 2
+2 1 0 -22 10 100 5 1 0
+EDGES
+0 2 4
+3 0 4
+4 3 0
+EOF
