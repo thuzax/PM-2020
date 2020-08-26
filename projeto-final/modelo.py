@@ -1,3 +1,5 @@
+import random
+
 from gurobipy import *
 
 M = 999999
@@ -84,7 +86,7 @@ def declara_variaveis(modelo, vertices, veiculos):
         ub_apos_servico[key] = {}
         for veiculo in veiculos:
             nome_var = ""
-            nome_var += "ub_apos_servico"
+            nome_var += "ub_apos_servico_"
             nome_var += str(key)
             nome_var += "_"
             nome_var += str(veiculo)
@@ -444,11 +446,34 @@ def declara_restricoes(modelo, vertices, matriz, veiculos, conjunto_variaveis):
         )
 
 
+def declara_restricoes_rota_trivial(
+    modelo,
+    ini_vertice, 
+    fim_vertice, 
+    veiculos, 
+    arestas_veic
+):
+    n = min(len(veiculos)-1, fim_vertice-1)
+    num_veic = random.randint(0, n)
+
+    restricoes_rota_trivial = {}
+
+    name_rest = ""
+    name_rest += "rota_trivial_"
+    name_rest += str(1)
+
+    restricoes_rota_trivial[0] = modelo.addConstr(
+        arestas_veic[ini_vertice][fim_vertice][num_veic],
+        GRB.EQUAL,
+        0,
+        name=name_rest
+    ) 
+
+
 def declara_funcao_objetivo(modelo, vertices, matriz, veiculos, conj_vars):
     arestas_veic, local_ini_veic, ub_pos_serv, pedido_banco = conj_vars
     pickups, deliveries, depoistos = separa_conjuntos(vertices, veiculos)
 
-    # print(calc_dist(vertices[0], vertices[1]))
 
     soma_1 = (
         quicksum(
@@ -492,11 +517,11 @@ def declara_funcao_objetivo(modelo, vertices, matriz, veiculos, conj_vars):
     )
 
 
-def cria_modelo(vertices, matriz, veiculos):
+def cria_modelo(vertices, matriz, veiculos, time_limit):
 
     modelo = Model("modelo_pdjt")
 
-    modelo.setParam("TimeLimit", 100)
+    modelo.setParam("TimeLimit", time_limit)
     modelo.setParam("Threads", 6)
 
     conjunto_variaveis = declara_variaveis(modelo, vertices, veiculos.keys())
@@ -512,64 +537,106 @@ def cria_modelo(vertices, matriz, veiculos):
     return modelo
 
 
-def cria_modelo_feasibility_pump(vertices, matriz, veiculos, conjs_vars):
+def cria_modelo_feasibility_pump(
+        modelo_anterior, 
+        solucao_int_anterior, 
+        vertices, 
+        matriz, 
+        veiculos, 
+        time_limit
+):
+
+    solucao_anterior = modelo_anterior.getVars()
+
+    modelo = Model("modelo_feasibility_pump")
+    modelo.setParam("TimeLimit", time_limit)
+    modelo.setParam("Threads", 6)
+
+    conj_vars = declara_variaveis(modelo, vertices, veiculos)
     arestas_veic, local_ini_veic, ub_pos_serv, pedido_banco = conj_vars
 
 
-    modelo = Model("modelo_feasibility_pump")
-    modelo.setParam("Threads", 6)
+    soma = 0
 
-    solucao_int_anterior = {}
+    for i in range(len(solucao_anterior)):
+        nome_var = solucao_anterior[i].varName
+        if ("aresta" in nome_var):
+            nome_var_separado = nome_var.split("_")
+            v1 = int(nome_var_separado[1])
+            v2 = int(nome_var_separado[2])
+            veic = int(nome_var_separado[3])
 
-    for v in solucao_anterior:
-        solucao_int_anterior[v.varName] = round(v.x)
-    
+            if (solucao_int_anterior[nome_var] == 0):
+                soma += arestas_veic[v1][v2][veic]
+            
+            if (solucao_int_anterior[nome_var] == 1):
+                soma += (1 - arestas_veic[v1][v2][veic])
 
-    aresta_usada_por_veiculo = {}
-    for i in range(len(arestas_veic)):
-        novo_conj_vars[i] = {}
-        for j in range(len(arestas_veic[i])):
-            novo_conj_vars[i][j] = {}
-            for k in range(len(arestas_veic[i][j])):
-                nome_var = ""
-                nome_var += "aresta_" 
-                nome_var += str(i) 
-                nome_var += "_" 
-                nome_var += str(j) 
-                nome_var += "_" 
-                nome_var += str(k)
-                
-                aresta_usada_por_veiculo[i][j][k] = modelo.addVar(
-                    name=nome_var,
-                    vtype=GRB.CONTINUOUS,
-                    lb=0,
-                    ub=1
-            )
+            continue
+        if ("local_inicio" in nome_var):
+            continue
+        if ("ub_apos_servico" in nome_var):
+            continue
+        if ("pedido_no_banco" in nome_var):
+            nome_var_separado = nome_var.split("_")
+            pos = int(nome_var_separado[-1])
 
-    pedido_esta_no_banco = {}
-    for i in range(len(pedido_banco)):
-        nome_var = ""
-        nome_var = "pedido_no_banco_" + str(key)
-        pedido_esta_no_banco[i] = modelo.addVar(
-            name=nome_var,
-            vtype=GRB.CONTINUOUS,
-            lb=0,
-            ub=1
+            if (solucao_int_anterior[nome_var] == 0):
+                soma += pedido_banco[pos]
+            
+            if (solucao_int_anterior[nome_var] == 1):
+                soma += (1 - pedido_banco[pos])
+            continue
+
+    pickups, deliveries, depoistos = separa_conjuntos(vertices, veiculos)
+    soma_2 = (
+        quicksum(
+            pedido_banco[i]
+            for i in pickups
         )
-
-    novo_conj_vars = (
-        aresta_usada_por_veiculo, 
-        local_ini_veic, 
-        ub_pos_serv,
-        pedido_esta_no_banco
     )
 
-    soma = 0
-    
+    soma_3 = (
+        quicksum(
+            quicksum(
+                local_ini_veic[i][k]
+                for k in veiculos.keys()
+            )
+            for i in vertices.keys()
+        )
+    )
 
-    model.setObjective(
-        soma,
+    soma_4 = (
+        quicksum(
+            quicksum(
+                ub_pos_serv[i][k]
+                for k in veiculos.keys()
+            )
+            for i in vertices.keys()
+        )
+    )
+
+    modelo.setObjective(
+        (
+            soma
+            + soma_2
+            + 100*soma_3
+            + 100*soma_4
+        ),
         GRB.MINIMIZE
     )
+
+
+    declara_restricoes(modelo, vertices, matriz, veiculos, conj_vars)
+
+    declara_restricoes_rota_trivial(
+        modelo,
+        vertices[0].idx, 
+        vertices[vertices[0].par_delivery].idx, 
+        veiculos, 
+        arestas_veic
+    )
+
+    modelo.write("fp.lp")
 
     return modelo
