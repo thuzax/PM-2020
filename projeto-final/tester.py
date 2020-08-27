@@ -29,9 +29,11 @@ if __name__=="__main__":
 
         executed_commands.append(command)
         returned = os.popen(command).readlines()
-
+        # print(returned)
         final_results.append(returned)
 
+
+    # print(final_results)
     text_errors = ""
     for error in errors:
         text_errors += error + "\n"

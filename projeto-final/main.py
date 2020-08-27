@@ -1,6 +1,8 @@
 import sys
 import time
 import random
+import copy
+
 from operator import itemgetter 
 
 
@@ -96,6 +98,18 @@ def feasibility_pump(modelo, vertices, matriz, veiculos, time_limit):
 
     modelo.optimize()
 
+
+    if (modelo.status != GRB.OPTIMAL):
+        print("NAO ACHOU SOL INICIAL")
+        exit(0)
+
+    # print("------------------------------------------------")
+    # print("------------------------------------------------")
+    # print("------------------------------------------------")
+    # print("------------------------------------------------")
+    # print("------------------------------------------------")
+    # print("------------------------------------------------")
+
     iteracao = 0
     texto = ""
     for v in modelo.getVars():
@@ -125,29 +139,30 @@ def feasibility_pump(modelo, vertices, matriz, veiculos, time_limit):
     
     ultimo_viavel = modelo
 
+    tempo_atual = time.time()
+    tempo = tempo_atual - tempo_inicio
+
     m = cria_modelo_feasibility_pump(
         modelo, 
         solucao_int_anterior, 
         vertices, 
         matriz, 
         veiculos,
-        time_limit
+        time_limit-tempo
     )
-
     vetor_detecta_loop = []
     tam_detecta_loop = 5
     add_solucao_detecta_loop(vetor_detecta_loop, solucao_int_anterior)
+    if (time_limit-tempo > 0):
+        m.optimize()
 
-    m.optimize()
-
-    print(GRB.OPTIMAL)
 
     tempo_atual = time.time()
     tempo = tempo_atual - tempo_inicio
     iteracao += 1
     factivel = somente_inteiros(m.getVars())
     while (
-            GRB.OPTIMAL == 2
+            m.status == GRB.OPTIMAL
             and not factivel 
             and not time_out(tempo, time_limit)
     ):
@@ -185,16 +200,19 @@ def feasibility_pump(modelo, vertices, matriz, veiculos, time_limit):
                 modelo.getVars()
             )
 
+        tempo_atual = time.time()
+        tempo = tempo_atual - tempo_inicio
+
         m = cria_modelo_feasibility_pump(
             modelo, 
             solucao_int_anterior, 
             vertices, 
             matriz, 
             veiculos,
-            time_limit
+            time_limit-tempo
         )
-
-        m.optimize()
+        if (time_limit-tempo > 0):
+            m.optimize()
         
         iteracao += 1
         
@@ -202,26 +220,25 @@ def feasibility_pump(modelo, vertices, matriz, veiculos, time_limit):
         print(tempo_atual)
         tempo = tempo_atual - tempo_inicio
 
-        factivel = somente_inteiros(m.getVars())
+        if (m.status == GRB.OPTIMAL):
+            factivel = somente_inteiros(m.getVars())
 
     tempo_atual = time.time()
     tempo = tempo_atual - tempo_inicio
 
     texto = ""
-    for v in m.getVars():
+    for v in ultimo_viavel.getVars():
         texto += str(v.varName)
         texto += ": "
         texto += str(v.x)
         texto += "\n"
 
     texto += "obj: "
-    texto += str(m.objVal)
+    texto += str(ultimo_viavel.objVal)
     texto += "\n"
 
-    with open("saida_fp.txt", "w") as saida:
-        saida.write(texto)
 
-    return (m.objVal, factivel, tempo)
+    return (ultimo_viavel.objVal, factivel, tempo, texto)
 
 if __name__ == "__main__":
     if (len(sys.argv) < 3):
@@ -229,7 +246,11 @@ if __name__ == "__main__":
         print("python3 main.py <arquivo-de-entrada> <numero-de-caminhoes>")
 
     arquivo_entrada = sys.argv[1]
-    arquivo_saida = arquivo_entrada.split(".")[0] + "-saida" + ".txt"
+    arquivo_saida = "." + arquivo_entrada.split(".")[1] + "-saida" + ".txt"
+    
+    arquivo_saida_var = "." + arquivo_entrada.split(".")[1] + "-saida-variaveis" 
+    arquivo_saida_var += ".txt"
+
     num_caminhoes = int(sys.argv[2])
 
 
@@ -279,8 +300,8 @@ if __name__ == "__main__":
     time_limit = 25*60
     m = cria_modelo(vertices, matriz, veiculos, time_limit)
 
+    # try:
     resultado = feasibility_pump(m, vertices,  matriz, veiculos, time_limit)
-
     texto = ""
     texto += str(num_caminhoes)
     texto += "\n"
@@ -294,4 +315,11 @@ if __name__ == "__main__":
     with open(arquivo_saida, "w") as saida:
         saida.write(texto)
 
+    with open(arquivo_saida_var, "w") as saida:
+        saida.write(resultado[3])
+
+    # except Exception as ex:
+    #     print("Exception: ", ex)
+
+    
 
