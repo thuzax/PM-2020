@@ -144,7 +144,7 @@ def feasibility_pump(modelo, vertices, matriz, veiculos, time_limit):
         veiculos,
         time_limit-tempo
     )
-    
+
     vetor_detecta_loop = []
     tam_detecta_loop = 5
     add_solucao_detecta_loop(vetor_detecta_loop, solucao_int_anterior)
@@ -312,9 +312,6 @@ if __name__ == "__main__":
 
     with open(arquivo_saida_var, "w") as saida:
         saida.write(resultado[3])
-
-    # except Exception as ex:
-    #     print("Exception: ", ex)
 
     
 
