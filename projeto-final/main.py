@@ -239,6 +239,7 @@ if __name__ == "__main__":
     if (len(sys.argv) < 3):
         print("Execute o comando como abaixo:")
         print("python3 main.py <arquivo-de-entrada> <numero-de-caminhoes>")
+        exit(0)
 
     arquivo_entrada = sys.argv[1]
     arquivo_saida = "." + arquivo_entrada.split(".")[1] + "-saida" + ".txt"
