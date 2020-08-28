@@ -467,7 +467,19 @@ def declara_restricoes_rota_trivial(
         GRB.EQUAL,
         0,
         name=name_rest
+    )
+
+
+    name_rest = ""
+    name_rest += "rota_trivial_"
+    name_rest += str(2)
+    restricoes_rota_trivial[1] = modelo.addConstr(
+        arestas_veic[fim_vertice][ini_vertice][num_veic],
+        GRB.EQUAL,
+        0,
+        name=name_rest
     ) 
+
 
 
 def declara_funcao_objetivo(modelo, vertices, matriz, veiculos, conj_vars):
@@ -618,10 +630,9 @@ def cria_modelo_feasibility_pump(
 
     modelo.setObjective(
         (
-            soma
-            + soma_2
+            2*soma
             + 100*soma_3
-            + 100*soma_4
+            - 0.00001*soma_4
         ),
         GRB.MINIMIZE
     )

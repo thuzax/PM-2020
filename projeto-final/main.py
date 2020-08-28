@@ -103,12 +103,6 @@ def feasibility_pump(modelo, vertices, matriz, veiculos, time_limit):
         print("NAO ACHOU SOL INICIAL")
         exit(0)
 
-    # print("------------------------------------------------")
-    # print("------------------------------------------------")
-    # print("------------------------------------------------")
-    # print("------------------------------------------------")
-    # print("------------------------------------------------")
-    # print("------------------------------------------------")
 
     iteracao = 0
     texto = ""
@@ -150,6 +144,7 @@ def feasibility_pump(modelo, vertices, matriz, veiculos, time_limit):
         veiculos,
         time_limit-tempo
     )
+    
     vetor_detecta_loop = []
     tam_detecta_loop = 5
     add_solucao_detecta_loop(vetor_detecta_loop, solucao_int_anterior)
